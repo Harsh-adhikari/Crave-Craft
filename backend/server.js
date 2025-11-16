@@ -62,8 +62,7 @@ app.use(express.json())
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'https://crave-craftv1.vercel.app',  // Your actual Vercel URL
-        /^https:\/\/crave-craft.*\.vercel\.app$/  // All Vercel preview deployments
+        /^https:\/\/.*\.vercel\.app$/  // Allows ANY vercel.app domain
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
