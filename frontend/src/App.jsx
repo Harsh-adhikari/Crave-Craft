@@ -1,4 +1,5 @@
 // import { createBrowserRouter, RouterProvider } from "react-router-dom";
+// import { useState, useEffect } from "react";
 // import Home from "./pages/Home";
 // import AddFoodRecipe from "./pages/AddFoodRecipe";
 // import EditRecipe from "./pages/EditRecipe";
@@ -85,13 +86,47 @@
 //   }
 // ]);
 
+// // Loader Component
+// function Loader() {
+//   return (
+//     <div className="loader-overlay">
+//       <div className="loader-container">
+//         <div className="food-loader">
+//           <div className="plate">
+//             <div className="food-item food-1"></div>
+//             <div className="food-item food-2"></div>
+//             <div className="food-item food-3"></div>
+//           </div>
+//           <div className="steam steam-1"></div>
+//           <div className="steam steam-2"></div>
+//           <div className="steam steam-3"></div>
+//         </div>
+//         <p className="loader-text">Loading delicious recipes...</p>
+//       </div>
+//     </div>
+//   );
+// }
+
 // function App() {
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     // Simulate initial app loading
+//     const timer = setTimeout(() => {
+//       setLoading(false);
+//     }, 1500);
+
+//     return () => clearTimeout(timer);
+//   }, []);
+
+//   if (loading) {
+//     return <Loader />;
+//   }
+
 //   return <RouterProvider router={router} />;
 // }
 
 // export default App;
-
-
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -100,13 +135,13 @@ import AddFoodRecipe from "./pages/AddFoodRecipe";
 import EditRecipe from "./pages/EditRecipe";
 import Favourites from "./pages/Favourites";
 import MainNavigation from "./components/MainNavigation";
-import axios from "axios";
+import api from './config/api';
 import './App.css';
 
 // Loader function to fetch all recipes (for home page)
 export const recipesLoader = async () => {
   try {
-    const response = await axios.get("http://localhost:5000/recipe/");
+    const response = await api.get("/recipe/");
     return response.data;
   } catch (error) {
     console.error("Error loading recipes:", error);
@@ -123,12 +158,7 @@ export const myRecipesLoader = async () => {
       return [];
     }
     
-    // Call the NEW endpoint with authentication
-    const response = await axios.get("http://localhost:5000/recipe/my", {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await api.get("/recipe/my");
     
     console.log("My recipes loaded:", response.data);
     return response.data;
@@ -141,7 +171,7 @@ export const myRecipesLoader = async () => {
 // Loader function for a specific recipe
 export const recipeLoader = async ({ params }) => {
   try {
-    const response = await axios.get(`http://localhost:5000/recipe/${params.id}`);
+    const response = await api.get(`/recipe/${params.id}`);
     return response.data;
   } catch (error) {
     console.error("Error loading recipe:", error);

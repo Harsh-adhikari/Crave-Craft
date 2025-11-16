@@ -10,14 +10,27 @@ connectDb()
 app.use(express.json())
 
 
+// app.use(cors({
+//     origin: [
+//         'http://localhost:5173', 
+//         'https://your-frontend-url.vercel.app' 
+//     ],
+//     credentials: true,
+//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+// }))
+
+
 app.use(cors({
     origin: [
-        'http://localhost:5173', 
-        'https://your-frontend-url.vercel.app' 
+        'http://localhost:5173',
+        'https://crave-craft-dequ3qw2x-harsh-adhikaris-projects-f6407523.vercel.app',
+        'https://crave-craft-git-main-harsh-adhikaris-projects-f6407523.vercel.app', // Vercel preview URLs
+        /^https:\/\/crave-craft-.*\.vercel\.app$/ // Allow all Vercel deployment URLs
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 }))
+
 
 app.use(express.static("public"))
 
