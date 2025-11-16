@@ -577,6 +577,7 @@ body {
 /* =========================
    CARD CONTAINER - RESPONSIVE GRID
    ========================= */
+  
 .card-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -690,6 +691,16 @@ body {
 
 .deleteIcon:hover {
   color: #d32f2f;
+}
+
+/* Hide scrollbar for modal */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* =========================

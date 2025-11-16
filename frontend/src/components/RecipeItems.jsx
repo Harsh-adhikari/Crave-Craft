@@ -13,6 +13,16 @@
 //   let path = window.location.pathname === "/myRecipe" ? true : false;
 //   const navigate = useNavigate();
 
+//   // Get current user ID once
+//   const getCurrentUserId = () => {
+//     try {
+//       const user = JSON.parse(localStorage.getItem("user") || "{}");
+//       return user._id || null;
+//     } catch {
+//       return null;
+//     }
+//   };
+
 //   useEffect(() => {
 //     console.log("Loaded recipes:", recipes);
 //     setAllRecipes(recipes);
@@ -25,13 +35,19 @@
 //     setAllRecipes((recipes) => recipes.filter((recipe) => recipe._id !== id));
 //   };
 
-//   // New: Toggle like/unlike functionality
+//   // Fixed: Toggle like/unlike functionality
 //   const toggleLike = async (recipeId) => {
 //     try {
 //       const token = localStorage.getItem("token");
 
 //       if (!token) {
 //         alert("Please login to like recipes!");
+//         return;
+//       }
+
+//       const currentUserId = getCurrentUserId();
+//       if (!currentUserId) {
+//         alert("User information not found. Please login again.");
 //         return;
 //       }
 
@@ -46,7 +62,7 @@
 //       );
 
 //       if (response.data.success) {
-//         // Update the like count in the local state
+//         // Update the like count and likes array in the local state
 //         setAllRecipes((prevRecipes) =>
 //           prevRecipes.map((recipe) =>
 //             recipe._id === recipeId
@@ -54,10 +70,8 @@
 //                   ...recipe,
 //                   likeCount: response.data.likeCount,
 //                   likes: response.data.liked
-//                     ? [...(recipe.likes || []), "current-user"]
-//                     : (recipe.likes || []).filter(
-//                         (id) => id !== "current-user"
-//                       ),
+//                     ? [...(recipe.likes || []), currentUserId]
+//                     : (recipe.likes || []).filter((id) => id !== currentUserId),
 //                 }
 //               : recipe
 //           )
@@ -71,13 +85,15 @@
 //     }
 //   };
 
-//   // Helper: Check if current user liked this recipe
+//   // Fixed: Check if current user liked this recipe
 //   const isLikedByCurrentUser = (recipe) => {
 //     const token = localStorage.getItem("token");
 //     if (!token) return false;
 
-//     const user = JSON.parse(localStorage.getItem("user") || "{}");
-//     return recipe.likes && recipe.likes.includes(user._id);
+//     const currentUserId = getCurrentUserId();
+//     if (!currentUserId) return false;
+
+//     return recipe.likes && recipe.likes.includes(currentUserId);
 //   };
 
 //   // Helper function to truncate text
@@ -251,21 +267,20 @@
 //   );
 // }
 
-
-
-
 import React, { useEffect, useState } from "react";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
 import foodImg from "../assets/foodRecipe.png";
 import { BsStopwatchFill } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa6";
 import { FaEdit } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdClose } from "react-icons/md";
+import { IoEyeSharp } from "react-icons/io5";
 import axios from "axios";
 
 export default function RecipeItems() {
   const recipes = useLoaderData();
   const [allRecipes, setAllRecipes] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   let path = window.location.pathname === "/myRecipe" ? true : false;
   const navigate = useNavigate();
 
@@ -291,7 +306,7 @@ export default function RecipeItems() {
     setAllRecipes((recipes) => recipes.filter((recipe) => recipe._id !== id));
   };
 
-  // Fixed: Toggle like/unlike functionality
+  // Toggle like/unlike functionality
   const toggleLike = async (recipeId) => {
     try {
       const token = localStorage.getItem("token");
@@ -318,7 +333,6 @@ export default function RecipeItems() {
       );
 
       if (response.data.success) {
-        // Update the like count and likes array in the local state
         setAllRecipes((prevRecipes) =>
           prevRecipes.map((recipe) =>
             recipe._id === recipeId
@@ -341,7 +355,7 @@ export default function RecipeItems() {
     }
   };
 
-  // Fixed: Check if current user liked this recipe
+  // Check if current user liked this recipe
   const isLikedByCurrentUser = (recipe) => {
     const token = localStorage.getItem("token");
     if (!token) return false;
@@ -375,6 +389,22 @@ export default function RecipeItems() {
       return `${ingredients.slice(0, 3).join(", ")}... (+${
         ingredients.length - 3
       } more)`;
+    }
+
+    return "No ingredients listed";
+  };
+
+  // Format full ingredients for modal
+  const formatFullIngredients = (ingredients) => {
+    if (!ingredients || ingredients.length === 0)
+      return "No ingredients listed";
+
+    if (typeof ingredients === "string") {
+      return ingredients;
+    }
+
+    if (Array.isArray(ingredients)) {
+      return ingredients.join(", ");
     }
 
     return "No ingredients listed";
@@ -441,9 +471,42 @@ export default function RecipeItems() {
                     </strong>
                     <br />
                     <span style={{ fontSize: "0.8rem" }}>
-                      {truncateText(item.instructions, 100)}
+                      {truncateText(item.instructions, 80)}
                     </span>
                   </div>
+
+                  {/* View Details Button */}
+                  <button
+                    onClick={() => setSelectedRecipe(item)}
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem",
+                      background: "linear-gradient(135deg, #ff6b35, #f7931e)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "0.85rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                      transition: "all 0.3s ease",
+                      marginBottom: "0.5rem",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(255, 107, 53, 0.4)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <IoEyeSharp /> View Full Recipe
+                  </button>
 
                   <div className="icons">
                     <div className="timer">
@@ -519,6 +582,258 @@ export default function RecipeItems() {
           </div>
         )}
       </div>
+      {/* Recipe Details Modal */}
+      {selectedRecipe && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+          onClick={() => setSelectedRecipe(null)}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "20px",
+              maxWidth: "800px",
+              width: "100%",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button - Fixed Position */}
+            <button
+              onClick={() => setSelectedRecipe(null)}
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "#f44336",
+                color: "white",
+                border: "none",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                minWidth: "40px",
+                minHeight: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: "1.5rem",
+                fontWeight: "bold",
+                lineHeight: "1",
+                zIndex: 10,
+                boxShadow: "0 4px 12px rgba(244, 67, 54, 0.4)",
+                transition: "all 0.3s ease",
+                padding: "0",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "#d32f2f";
+                e.currentTarget.style.transform = "scale(1.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 16px rgba(211, 47, 47, 0.5)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "#f44336";
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(244, 67, 54, 0.4)";
+              }}
+            >
+              ×
+            </button>
+            {/* Recipe Image - Fixed Height */}
+            <div
+              style={{
+                flexShrink: 0,
+                height: "290px",
+                overflow: "hidden",
+                backgroundColor: "#f5f5f5",
+              }}
+            >
+              <img
+                src={`http://localhost:5000/images/${selectedRecipe.coverImage}`}
+                alt={selectedRecipe.title}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  e.target.src = foodImg;
+                }}
+              />
+            </div>
+            {/* Scrollable Content */}
+            <div
+              style={{
+                overflowY: "auto",
+                flex: 1,
+                padding: "1.5rem 2rem 2rem 2rem",
+                scrollbarWidth: "none", // Firefox
+                msOverflowStyle: "none", // IE and Edge
+              }}
+              className="hide-scrollbar"
+            >
+              <h2
+                style={{
+                  fontSize: "1.8rem",
+                  fontWeight: "800",
+                  color: "#2c3639",
+                  marginBottom: "1rem",
+                  background: "linear-gradient(135deg, #ff6b35, #f7931e)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  paddingRight: "2rem",
+                }}
+              >
+                {selectedRecipe.title}
+              </h2>
+
+              {/* Time Badge */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  background: "linear-gradient(135deg, #ff6b35, #f7931e)",
+                  color: "white",
+                  borderRadius: "50px",
+                  fontSize: "0.9rem",
+                  fontWeight: "600",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                <BsStopwatchFill /> {selectedRecipe.time || "N/A"}
+              </div>
+
+              {/* Ingredients Section */}
+              <div
+                style={{
+                  marginBottom: "1.5rem",
+                  padding: "1.25rem",
+                  background: "#fff8f3",
+                  borderRadius: "12px",
+                  border: "2px solid #ffe8d6",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "700",
+                    color: "#ff6b35",
+                    marginBottom: "0.8rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  🥘 Ingredients
+                </h3>
+                <p
+                  style={{
+                    fontSize: "0.95rem",
+                    color: "#555",
+                    lineHeight: "1.7",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {formatFullIngredients(selectedRecipe.ingredients)}
+                </p>
+              </div>
+
+              {/* Instructions Section */}
+              <div
+                style={{
+                  padding: "1.25rem",
+                  background: "#f9f9f9",
+                  borderRadius: "12px",
+                  border: "2px solid #eee",
+                  marginBottom: "1rem",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "700",
+                    color: "#ff6b35",
+                    marginBottom: "0.8rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  📝 Instructions
+                </h3>
+                <p
+                  style={{
+                    fontSize: "0.95rem",
+                    color: "#555",
+                    lineHeight: "1.7",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {selectedRecipe.instructions || "No instructions provided"}
+                </p>
+              </div>
+
+              {/* Like Section in Modal */}
+              {!path && (
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "1rem",
+                    padding: "1rem",
+                    background: "#fff8f3",
+                    borderRadius: "12px",
+                  }}
+                >
+                  <FaHeart
+                    onClick={() => toggleLike(selectedRecipe._id)}
+                    style={{
+                      color: isLikedByCurrentUser(selectedRecipe)
+                        ? "red"
+                        : "#ccc",
+                      cursor: "pointer",
+                      fontSize: "1.8rem",
+                      transition: "all 0.2s ease",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "1.1rem",
+                      fontWeight: "600",
+                      color: "#666",
+                    }}
+                  >
+                    {selectedRecipe.likeCount || 0} likes
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
