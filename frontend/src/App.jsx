@@ -269,10 +269,6 @@
 
 
 
-
-
-
-
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Home from "./pages/Home";
@@ -362,40 +358,43 @@ function App() {
 
   useEffect(() => {
     let isComponentMounted = true;
+    let retryCount = 0;
+    const MAX_RETRIES = 5; // Limit retry attempts
 
     const checkBackendAndLoad = async () => {
       const startTime = Date.now();
       const MINIMUM_LOADING_TIME = 2000; // Show loader for at least 2 seconds
 
       try {
-        // Ping your existing recipe endpoint to wake up the backend
-        const response = await fetch('https://crave-craftv2.onrender.com/api/recipe', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: AbortSignal.timeout(90000), // 90 second timeout
+        // Use the api instance from your config file
+        const response = await api.get('/recipe', {
+          timeout: 30000, // 30 second timeout (more reasonable)
         });
 
-        if (response.ok || response.status === 200) {
-          // Calculate remaining time to meet minimum display
-          const elapsedTime = Date.now() - startTime;
-          const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - elapsedTime);
+        // Calculate remaining time to meet minimum display
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - elapsedTime);
 
-          // Wait for remaining time, then hide loader
-          await new Promise(resolve => setTimeout(resolve, remainingTime));
-          
+        // Wait for remaining time, then hide loader
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+        
+        if (isComponentMounted) {
+          setIsInitialLoading(false);
+        }
+      } catch (error) {
+        console.error('Backend check failed:', error.message);
+        retryCount++;
+        
+        // Only retry if under max retries and component is still mounted
+        if (retryCount < MAX_RETRIES && isComponentMounted) {
+          console.log(`Retrying... (${retryCount}/${MAX_RETRIES})`);
+          setTimeout(checkBackendAndLoad, 3000);
+        } else {
+          // After max retries, just show the app anyway
+          console.log('Max retries reached or component unmounted. Showing app...');
           if (isComponentMounted) {
             setIsInitialLoading(false);
           }
-        } else {
-          throw new Error('Backend not ready');
-        }
-      } catch (error) {
-        console.error('Backend check failed, retrying...', error.message);
-        // Retry after 3 seconds
-        if (isComponentMounted) {
-          setTimeout(checkBackendAndLoad, 3000);
         }
       }
     };
